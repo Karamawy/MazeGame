@@ -1,4 +1,4 @@
-package gfx;
+package dev.codenmore.tilegame.gfx;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;

@@ -1,13 +1,21 @@
+package dev.codenmore.tilegame;
+
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 
-import display.Display;
-import gfx.Assets;
+import dev.codenmore.tilegame.display.Display;
+import dev.codenmore.tilegame.gfx.Assets;
+import dev.codenmore.tilegame.gfx.GameCamera;
+import dev.codenmore.tilegame.input.KeyManager;
+import dev.codenmore.tilegame.input.MouseManager;
+import dev.codenmore.tilegame.states.GameState;
+import dev.codenmore.tilegame.states.MenuState;
+import dev.codenmore.tilegame.states.State;
 
 public class Game implements Runnable {
 
 	private Display display;
-	public int width, height;
+	private int width, height;
 	public String title;
 	
 	private boolean running = false;
@@ -16,21 +24,50 @@ public class Game implements Runnable {
 	private BufferStrategy bs;
 	private Graphics g;
 	
+	//States
+	public State gameState;
+	public State menuState;
+	
+	//Input
+	private KeyManager keyManager;
+	private MouseManager mouseManager;
+	
+	//Camera
+	private GameCamera gameCamera;
+	
+	//Handler
+	private Handler handler;
+	
 	public Game(String title, int width, int height){
 		this.width = width;
 		this.height = height;
 		this.title = title;
+		keyManager = new KeyManager();
+		mouseManager = new MouseManager();
 	}
 	
 	private void init(){
 		display = new Display(title, width, height);
+		display.getFrame().addKeyListener(keyManager);
+		display.getFrame().addMouseListener(mouseManager);
+		display.getFrame().addMouseMotionListener(mouseManager);
+		display.getCanvas().addMouseListener(mouseManager);
+		display.getCanvas().addMouseMotionListener(mouseManager);
 		Assets.init();
+		
+		handler = new Handler(this);
+		gameCamera = new GameCamera(handler, 0, 0);
+		
+		gameState = new GameState(handler);
+		menuState = new MenuState(handler);
+		State.setState(menuState);
 	}
 	
-	int x = 0;
-	
 	private void tick(){
-		x += 1;
+		keyManager.tick();
+		
+		if(State.getState() != null)
+			State.getState().tick();
 	}
 	
 	private void render(){
@@ -44,7 +81,8 @@ public class Game implements Runnable {
 		g.clearRect(0, 0, width, height);
 		//Draw Here!
 		
-		g.drawImage(Assets.grass, x, 10, null);
+		if(State.getState() != null)
+			State.getState().render(g);
 		
 		//End Drawing!
 		bs.show();
@@ -85,6 +123,26 @@ public class Game implements Runnable {
 		
 		stop();
 		
+	}
+	
+	public KeyManager getKeyManager(){
+		return keyManager;
+	}
+	
+	public MouseManager getMouseManager(){
+		return mouseManager;
+	}
+	
+	public GameCamera getGameCamera(){
+		return gameCamera;
+	}
+	
+	public int getWidth(){
+		return width;
+	}
+	
+	public int getHeight(){
+		return height;
 	}
 	
 	public synchronized void start(){
